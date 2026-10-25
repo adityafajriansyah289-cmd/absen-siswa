@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Absen Siswa dengan QR Code</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+:root{--ink:#14213d;--paper:#f5f7fb;--card:#fff;--line:#d9dfec;--muted:#5b6788;
+--belum:#c5cde0;--hadir:#0f9d7a;--telat:#d97706;--izin:#7c5ce0;--sakit:#3b6fe0;--alpa:#d6423c}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;font-family:"Bricolage Grotesque",system-ui,sans-serif;background:var(--paper);color:var(--ink);line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+h1{margin:0;font-size:clamp(28px,5vw,42px);font-weight:800;letter-spacing:-.02em;line-height:1.05}
+.meta{color:var(--muted);font-size:15px;margin:4px 0 0}
+.top{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:flex-end;margin-bottom:18px}
+.tabs{display:flex;gap:6px}
+.tabs button[aria-pressed=true]{background:var(--ink);color:#fff}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+.panel h2{margin:0 0 10px;font-size:18px}
+.scan{border:2px solid var(--ink)}
+input[type=text],input[type=password],input[type=time],select{font:inherit;padding:10px 12px;border:2px solid var(--line);border-radius:10px;width:100%}
+.big{font-size:20px;font-weight:600;letter-spacing:.06em;border-color:var(--ink)!important}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:3px solid var(--sakit);outline-offset:2px}
+.row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+button{font:inherit;font-weight:600;padding:10px 14px;border-radius:10px;border:2px solid var(--ink);background:var(--card);color:var(--ink);cursor:pointer}
+button.main{background:var(--ink);color:#fff}
+button.mini{padding:4px 10px;font-size:13px;border-width:1.5px}
+button:hover{opacity:.88}
+#result{margin-top:12px;border-radius:10px;padding:14px 16px;background:#eef1f8;min-height:68px}
+#result b{font-size:20px;display:block;line-height:1.2}
+#result.ok{background:#dcf4ec;color:#06583f}#result.warn{background:#fdecd2;color:#7a3f00}#result.err{background:#fbe0de;color:#7d1a15}
+video{width:100%;max-height:280px;border-radius:10px;margin-top:12px;background:#000;object-fit:cover}
+.login{max-width:380px;margin:24px auto}
+.login label,.lbl{display:block;font-size:14px;color:var(--muted);margin:12px 0 4px}
+.err{color:var(--alpa);font-size:14px;min-height:22px;margin:8px 0 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-top:6px solid var(--belum);border-radius:10px;padding:10px 12px}
+.stat b{font-size:30px;font-weight:800;line-height:1;display:block}
+.stat span{font-size:13px;color:var(--muted)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;vertical-align:middle}
+th{color:var(--muted);font-weight:600}
+td select{padding:4px 6px;font-size:13px;border-radius:8px}
+.badge{display:inline-block;font-size:12px;font-weight:600;color:#fff;border-radius:99px;padding:2px 10px;background:var(--belum)}
+.empty{color:var(--muted);font-size:14px;padding:8px 0}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+.card{background:var(--card);border:2px solid var(--line);border-top:8px solid var(--belum);border-radius:10px;padding:12px;text-align:center}
+.card[data-s=hadir]{border-top-color:var(--hadir)}.card[data-s=telat]{border-top-color:var(--telat)}.card[data-s=izin]{border-top-color:var(--izin)}.card[data-s=sakit]{border-top-color:var(--sakit)}.card[data-s=alpa]{border-top-color:var(--alpa)}
+.card.flash{animation:flash .9s}
+@keyframes flash{from{box-shadow:0 0 0 4px var(--hadir)}to{box-shadow:0 0 0 0 transparent}}
+.card .nm{font-weight:800;line-height:1.2;margin-bottom:2px}
+.card .kl{font-size:12px;color:var(--muted);margin-bottom:8px}
+.qr{background:#fff;width:140px;height:140px;margin:0 auto}
+.qr svg{width:100%!important;height:100%!important;display:block}
+.card .cd{font-size:13px;letter-spacing:.14em;font-weight:600;margin:4px 0 6px}
+.btnlink{display:inline-block;font-weight:600;font-size:14px;padding:6px 12px;border:2px solid var(--ink);border-radius:10px;color:var(--ink);text-decoration:none;background:var(--card)}
+@media (max-width:760px){.two{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important}}
+@media print{.noprint{display:none!important}body{background:#fff}.cards{grid-template-columns:repeat(3,1fr)}.card{break-inside:avoid;border:1px solid #000}.badge{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top noprint">
+    <div><h1>Absen Kelas XI IPA 2</h1><p class="meta" id="tanggal"></p></div>
+    <nav class="tabs">
+      <button id="tabScan" aria-pressed="true">Scan siswa</button>
+      <button id="tabGuru" aria-pressed="false">Dashboard guru</button>
+    </nav>
+  </div>
+
+  <!-- HALAMAN SCAN SISWA -->
+  <section id="vScan">
+    <div class="panel scan">
+      <h2>Scan QR pada kartu siswa</h2>
+      <input id="kode" class="big" type="text" autocomplete="off" autocapitalize="characters" placeholder="Arahkan scanner ke QR, atau ketik kode lalu Enter">
+      <div class="row">
+        <button class="main" id="btnScan">Scan</button>
+        <button id="btnCam">Buka kamera</button>
+        <button id="btnSim">Simulasi siswa datang</button>
+      </div>
+      <video id="video" muted playsinline hidden></video>
+      <div id="result" aria-live="polite"><b>Siap menerima scan</b>Scanner QR bekerja seperti keyboard, jadi cukup arahkan ke kartu.</div>
+    </div>
+    <div class="panel">
+      <h2>Baru saja absen <span class="meta" id="feedCount" style="font-weight:400"></span></h2>
+      <div id="feed"></div>
+    </div>
+  </section>
+
+  <!-- LOGIN GURU -->
+  <section id="vLogin" hidden>
+    <div class="panel login">
+      <h2>Masuk dashboard guru</h2>
+      <form id="formLogin">
+        <label for="lnama">Nama guru</label>
+        <input id="lnama" type="text" autocomplete="username">
+        <label for="lpass">Password</label>
+        <input id="lpass" type="password" autocomplete="current-password">
+        <p class="err" id="lerr" role="alert"></p>
+        <button class="main" type="submit" style="width:100%">Masuk</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- DASHBOARD GURU -->
+  <section id="vGuru" hidden>
+    <div class="top noprint" style="margin-bottom:10px">
+      <div><b id="sapa"></b><p class="meta">Rekap absen hari ini</p></div>
+      <button id="btnKeluar">Keluar</button>
+    </div>
+    <div class="stats noprint" id="stats"></div>
+
+    <div class="panel noprint">
+      <div class="row" style="margin-top:0;align-items:flex-end">
+        <div style="width:170px"><label class="lbl" for="batas" style="margin-top:0">Batas jam masuk</label><input type="time" id="batas"></div>
+        <button id="btnClose">Tutup absen</button>
+        <button id="btnCsv">Unduh CSV</button>
+        <button id="btnReset">Reset hari ini</button>
+      </div>
+      <p class="meta" style="font-size:13px">Scan setelah batas jam dicatat terlambat. “Tutup absen” mencatat alpa untuk siswa yang belum scan.</p>
+    </div>
+
+    <div class="panel noprint">
+      <h2>Tambah siswa</h2>
+      <form id="formTambah" class="row" style="align-items:flex-end;margin-top:0">
+        <div style="flex:1;min-width:150px"><label class="lbl" for="nis" style="margin-top:0">NIS</label><input id="nis" type="text" autocomplete="off" autocapitalize="characters"></div>
+        <div style="flex:2;min-width:200px"><label class="lbl" for="nama" style="margin-top:0">Nama siswa</label><input id="nama" type="text" autocomplete="off"></div>
+        <button class="main" type="submit">Tambah dan buat QR</button>
+      </form>
+      <p class="err" id="terr" role="alert"></p>
+      <div id="baru" hidden></div>
+    </div>
+
+    <div class="two noprint">
+      <div class="panel">
+        <h2>Sudah scan</h2>
+        <div class="scroll"><table><thead><tr><th>Jam scan</th><th>Nama</th><th>Status</th><th></th></tr></thead><tbody id="tHadir"></tbody></table></div>
+      </div>
+      <div class="panel">
+        <h2>Tidak hadir</h2>
+        <div class="scroll"><table><thead><tr><th>Nama</th><th>Status</th><th>Ubah</th></tr></thead><tbody id="tAbsen"></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="top noprint" style="margin-bottom:10px"><h2 style="margin:0">Kartu QR siswa</h2><button class="main" id="btnPrint">Cetak kartu</button></div>
+      <div class="cards" id="cards"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ===== Akun guru (ubah di sini) ===== */
+const GURU=[
+  {nama:"Bu Rina Wulandari",pass:"guru123"},
+  {nama:"Pak Budi Santoso",pass:"kelas11"}
+];
+
+const names=["Aditya Pratama","Aisyah Putri","Bagas Saputra","Bunga Lestari","Cahyo Nugroho","Citra Dewi","Dimas Ramadhan","Dinda Azzahra","Eko Prasetyo","Fajar Hidayat","Farah Nabila","Galih Wicaksono","Hana Safitri","Indra Kusuma","Intan Permata","Joko Santoso","Kania Rahma","Lukman Hakim","Maya Anggraini","Naufal Akbar","Nisa Maharani","Oka Wijaya","Putri Amelia","Rafi Firmansyah","Rani Oktaviani","Salsa Kirana","Taufik Ismail","Umi Kalsum","Vino Ardiansyah","Wulan Sari"];
+const SKEY="absen-qr-siswa";
+const baseList=names.map((n,i)=>({name:n,code:"SIS"+String(i+1).padStart(4,"0")}));
+let students;
+try{const l=JSON.parse(localStorage.getItem(SKEY)||"null");students=(Array.isArray(l)&&l.length?l:baseList)}catch(e){students=baseList}
+students=students.map(x=>({name:x.name,code:x.code,s:"belum",t:""}));
+function saveList(){try{localStorage.setItem(SKEY,JSON.stringify(students.map(s=>({name:s.name,code:s.code}))))}catch(e){}}
+const label={belum:"Belum scan",hadir:"Hadir",telat:"Terlambat",izin:"Izin",sakit:"Sakit",alpa:"Alpa"};
+const color={belum:"var(--belum)",hadir:"var(--hadir)",telat:"var(--telat)",izin:"var(--izin)",sakit:"var(--sakit)",alpa:"var(--alpa)"};
+const $=id=>document.getElementById(id);
+const scanned=s=>s.s==="hadir"||s.s==="telat";
+let guru=null;
+
+const today=new Date();
+$("tanggal").textContent=today.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long",year:"numeric"});
+const KEY="absen-qr-"+today.toISOString().slice(0,10);
+const d=new Date(Date.now()+15*60000);
+$("batas").value=String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+
+/* Simpan dan muat data hari ini */
+try{
+  const saved=JSON.parse(localStorage.getItem(KEY)||"null");
+  if(saved){students.forEach((s,k)=>{const r=Array.isArray(saved.s)?saved.s[k]:saved.s[s.code];if(r){s.s=r.s;s.t=r.t}});if(saved.batas)$("batas").value=saved.batas}
+}catch(e){}
+function save(){try{const m={};students.forEach(s=>{m[s.code]={s:s.s,t:s.t}});localStorage.setItem(KEY,JSON.stringify({s:m,batas:$("batas").value}))}catch(e){}}
+
+/* QR code */
+function qrSvg(text){
+  if(typeof qrcode==="undefined")return `<div style="padding:50px 4px;font-size:12px">Library QR belum termuat. Cek koneksi internet.</div>`;
+  const q=qrcode(0,"M");q.addData(text);q.make();return q.createSvgTag(4,2);
+}
+
+/* Kartu siswa */
+let cardEls=[];
+function buildCards(){
+  $("cards").innerHTML="";
+  cardEls=students.map((st,i)=>{
+    const el=document.createElement("article");el.className="card";
+    el.innerHTML=`<div class="nm"></div><div class="kl">NIS ${st.code}, No. ${i+1}</div>
+    <div class="qr" role="img" aria-label="QR code ${st.code}">${qrSvg(st.code)}</div><div class="cd">${st.code}</div>
+    <span class="badge"></span>
+    <div class="noprint" style="margin-top:8px;display:flex;gap:6px;justify-content:center"><button class="mini" type="button" data-a="scan">Scan kartu ini</button><button class="mini" type="button" data-a="hapus">Hapus</button></div>`;
+    el.querySelector(".nm").textContent=st.name;
+    el.querySelector('[data-a="scan"]').onclick=()=>handle(st.code);
+    el.querySelector('[data-a="hapus"]').onclick=()=>{
+      if(!confirm(`Hapus ${st.name} (NIS ${st.code}) dari daftar siswa?`))return;
+      students=students.filter(x=>x.code!==st.code);saveList();buildCards();render();
+    };
+    $("cards").appendChild(el);return el;
+  });
+}
+
+/* Tampilan */
+function view(v){
+  ["Scan","Login","Guru"].forEach(x=>$("v"+x).hidden=x!==v);
+  $("tabScan").setAttribute("aria-pressed",v==="Scan");
+  $("tabGuru").setAttribute("aria-pressed",v!=="Scan");
+  if(v==="Login")$("lnama").focus();if(v==="Scan")$("kode").focus();
+}
+$("tabScan").onclick=()=>view("Scan");
+$("tabGuru").onclick=()=>view(guru?"Guru":"Login");
+
+$("formLogin").addEventListener("submit",e=>{
+  e.preventDefault();
+  const n=$("lnama").value.trim().toLowerCase(),p=$("lpass").value;
+  const g=GURU.find(x=>x.nama.toLowerCase()===n&&x.pass===p);
+  if(!g){$("lerr").textContent="Nama atau password salah. Periksa huruf besar dan kecil pada password.";return}
+  guru=g;$("lerr").textContent="";$("lpass").value="";$("lnama").value="";
+  $("sapa").textContent="Masuk sebagai "+g.nama;view("Guru");
+});
+$("btnKeluar").onclick=()=>{guru=null;view("Scan")};
+
+function badge(s){return `<span class="badge" style="background:${color[s]}">${label[s]}</span>`}
+
+function render(){
+  const c={hadir:0,telat:0,izin:0,sakit:0,alpa:0,belum:0};
+  students.forEach((st,i)=>{c[st.s]++;cardEls[i].dataset.s=st.s;cardEls[i].querySelector(".badge").textContent=label[st.s]});
+  const total=students.length,ada=c.hadir+c.telat;
+
+  $("stats").innerHTML=`<div class="stat" style="border-top-color:var(--ink)"><b>${Math.round(ada/total*100)}%</b><span>Kehadiran</span></div>`+
+    ["hadir","telat","izin","sakit","alpa","belum"].map(k=>`<div class="stat" style="border-top-color:${color[k]}"><b>${c[k]}</b><span>${label[k]}</span></div>`).join("");
+
+  const hadir=students.filter(scanned).sort((a,b)=>a.t.localeCompare(b.t));
+  $("tHadir").innerHTML=hadir.length?hadir.map(s=>`<tr><td><b>${s.t}</b></td><td>${s.name}</td><td>${badge(s.s)}</td><td><button class="mini" data-undo="${s.code}">Batalkan</button></td></tr>`).join(""):`<tr><td colspan="4" class="empty">Belum ada siswa yang scan.</td></tr>`;
+
+  const absen=students.filter(s=>!scanned(s));
+  $("tAbsen").innerHTML=absen.length?absen.map(s=>`<tr><td>${s.name}</td><td>${badge(s.s)}</td><td><select data-ubah="${s.code}" aria-label="Ubah status ${s.name}">${["belum","izin","sakit","alpa"].map(k=>`<option value="${k}"${k===s.s?" selected":""}>${label[k]}</option>`).join("")}</select></td></tr>`).join(""):`<tr><td colspan="3" class="empty">Semua siswa sudah hadir.</td></tr>`;
+
+  const feed=hadir.slice().reverse().slice(0,6);
+  $("feedCount").textContent=`${ada} dari ${total} siswa`;
+  $("feed").innerHTML=feed.length?`<table><tbody>${feed.map(s=>`<tr><td><b>${s.t}</b></td><td>${s.name}</td><td>${badge(s.s)}</td></tr>`).join("")}</tbody></table>`:`<div class="empty">Belum ada yang scan.</div>`;
+  save();
+}
+
+$("tHadir").addEventListener("click",e=>{
+  const c=e.target.dataset.undo;if(!c)return;
+  const s=students.find(x=>x.code===c);s.s="belum";s.t="";render();
+});
+$("tAbsen").addEventListener("change",e=>{
+  const c=e.target.dataset.ubah;if(!c)return;
+  students.find(x=>x.code===c).s=e.target.value;render();
+});
+$("batas").addEventListener("change",save);
+
+/* Suara dan hasil */
+let ctx;
+function beep(f,dur){try{ctx=ctx||new AudioContext();const o=ctx.createOscillator(),g=ctx.createGain();o.frequency.value=f;g.gain.value=.08;o.connect(g);g.connect(ctx.destination);o.start();o.stop(ctx.currentTime+dur)}catch(e){}}
+function show(type,title,sub){const r=$("result");r.className=type;r.innerHTML="<b></b><span></span>";r.firstChild.textContent=title;r.lastChild.textContent=sub}
+
+function handle(raw){
+  const code=String(raw).trim().toUpperCase();
+  if(!code)return;
+  const i=students.findIndex(s=>s.code===code);
+  if(i<0){beep(180,.35);show("err","Kode tidak dikenal",`“${code}” tidak ada di daftar siswa kelas ini.`);return}
+  const st=students[i],now=new Date();
+  const jam=now.toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit",second:"2-digit"}).replace(/\./g,":");
+  if(scanned(st)){beep(300,.25);show("warn",st.name,`Sudah absen pukul ${st.t}. Scan kedua diabaikan.`);return}
+  const [bh,bm]=$("batas").value.split(":").map(Number);
+  const late=now.getHours()*60+now.getMinutes()>bh*60+bm;
+  st.s=late?"telat":"hadir";st.t=jam;
+  beep(late?520:880,.15);
+  show(late?"warn":"ok",st.name,late?`Terlambat, tercatat pukul ${jam}.`:`Hadir, tercatat pukul ${jam}.`);
+  render();
+  const el=cardEls[i];el.classList.remove("flash");void el.offsetWidth;el.classList.add("flash");
+}
+
+/* Input scanner */
+const kode=$("kode");
+function submitKode(){handle(kode.value);kode.value="";kode.focus()}
+kode.addEventListener("keydown",e=>{if(e.key==="Enter")submitKode()});
+$("btnScan").onclick=submitKode;
+
+/* Kamera (QR, butuh Chrome dan localhost atau https) */
+let stream,camTimer,lastCam={c:"",t:0};
+async function toggleCam(){
+  if(stream){stopCam();return}
+  if(!("BarcodeDetector" in window)){show("err","Kamera belum didukung","Browser ini belum punya BarcodeDetector. Pakai Chrome, scanner QR, atau ketik kode.");return}
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}});
+    const v=$("video");v.srcObject=stream;await v.play();v.hidden=false;
+    const det=new BarcodeDetector({formats:["qr_code"]});
+    camTimer=setInterval(async()=>{
+      try{const r=await det.detect(v);
+        if(r[0]){const c=r[0].rawValue,t=Date.now();if(c!==lastCam.c||t-lastCam.t>3000){lastCam={c,t};handle(c)}}}catch(e){}
+    },300);
+    $("btnCam").textContent="Matikan kamera";
+  }catch(e){show("err","Kamera tidak bisa dibuka","Izinkan akses kamera di browser, dan buka halaman lewat Live Server (localhost).")}
+}
+function stopCam(){clearInterval(camTimer);if(stream)stream.getTracks().forEach(t=>t.stop());stream=null;$("video").hidden=true;$("btnCam").textContent="Buka kamera"}
+$("btnCam").onclick=toggleCam;
+
+/* Simulasi siswa datang */
+let simTimer=null;
+function stopSim(){clearInterval(simTimer);simTimer=null;$("btnSim").textContent="Simulasi siswa datang"}
+$("btnSim").onclick=()=>{
+  if(simTimer){stopSim();return}
+  const q=students.filter(s=>s.s==="belum").map(s=>s.code).sort(()=>Math.random()-.5);
+  q.length-=Math.round(q.length*.12);
+  if(!q.length){show("warn","Tidak ada siswa tersisa","Minta guru mereset absen untuk mengulang simulasi.");return}
+  $("btnSim").textContent="Hentikan simulasi";
+  simTimer=setInterval(()=>{const c=q.pop();if(!c){stopSim();show("ok","Simulasi selesai","Sisa siswa yang belum scan bisa dilihat di dashboard guru.");return}handle(c)},700);
+};
+
+/* Tambah siswa */
+function qrUrl(text){if(typeof qrcode==="undefined")return"";const q=qrcode(0,"M");q.addData(text);q.make();return q.createDataURL(8,4)}
+$("formTambah").addEventListener("submit",e=>{
+  e.preventDefault();
+  const nis=$("nis").value.trim().toUpperCase(),nama=$("nama").value.trim().replace(/\s+/g," ");
+  const err=m=>{$("terr").textContent=m};
+  if(!nis||!nama){err("Isi NIS dan nama siswa.");return}
+  if(!/^[A-Z0-9]+$/.test(nis)){err("NIS hanya boleh huruf dan angka, tanpa spasi atau tanda baca.");return}
+  const ada=students.find(s=>s.code===nis);
+  if(ada){err(`NIS ${nis} sudah terdaftar atas nama ${ada.name}.`);return}
+  err("");
+  students.push({name:nama,code:nis,s:"belum",t:""});
+  saveList();buildCards();render();
+  const url=qrUrl(nis);
+  $("baru").hidden=false;
+  $("baru").innerHTML=`<div class="card" style="max-width:230px;margin-top:6px"><div class="nm"></div><div class="kl">NIS ${nis} berhasil ditambahkan</div>
+    <div class="qr">${qrSvg(nis)}</div><div class="cd">${nis}</div>
+    ${url?`<a class="btnlink" href="${url}" download="QR-${nis}.gif">Unduh QR</a>`:""}</div>`;
+  $("baru").querySelector(".nm").textContent=nama;
+  $("nis").value="";$("nama").value="";$("nis").focus();
+});
+
+/* Aksi guru */
+$("btnClose").onclick=()=>{
+  let n=0;students.forEach(s=>{if(s.s==="belum"){s.s="alpa";n++}});
+  render();alert(n?`${n} siswa yang belum scan dicatat alpa.`:"Semua siswa sudah tercatat.");
+};
+$("btnReset").onclick=()=>{
+  if(!confirm("Hapus semua data absen hari ini?"))return;
+  stopSim();students.forEach(s=>{s.s="belum";s.t=""});render();
+  show("","Siap menerima scan","Scanner QR bekerja seperti keyboard, jadi cukup arahkan ke kartu.");
+};
+$("btnPrint").onclick=()=>window.print();
+$("btnCsv").onclick=()=>{
+  const rows=[["No","Nama","Kode","Status","Jam scan"],...students.map((s,i)=>[i+1,s.name,s.code,label[s.s],s.t])];
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv"}));
+  a.download="absen-"+today.toISOString().slice(0,10)+".csv";a.click();URL.revokeObjectURL(a.href);
+};
+
+buildCards();render();kode.focus();
+</script>
+</body>
+</html>
